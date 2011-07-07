@@ -78,7 +78,15 @@ namespace ServiceStack.Text.Common
 
 				var propertyValueString = Serializer.EatValue(strType, ref index);
 
-				parseStringFnMap.TryGetValue(propertyName, out parseStringFn);
+                if (!parseStringFnMap.TryGetValue(propertyName, out parseStringFn))
+                {
+                    // try changing case of the first character
+                    var p2 = propertyName.ToggleFirstChar();
+                    if (p2 != null && parseStringFnMap.TryGetValue(p2, out parseStringFn))
+                    {
+                        propertyName = p2;
+                    }
+                }
 
 				if (parseStringFn != null)
 				{

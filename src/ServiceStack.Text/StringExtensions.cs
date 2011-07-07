@@ -41,6 +41,45 @@ namespace ServiceStack.Text
 			return TypeSerializer.DeserializeFromString(value, type);
 		}
 
+        /// <summary>
+        /// returns null if the first character is not a uppercase letter
+        /// </summary>
+        public static string FirstCharToLower(this string value)
+        {
+            return !IsFirstCharUpper(value)
+                ? null
+                : (value.Substring(0, 1).ToLowerInvariant() + value.Substring(1));
+        }
+
+        /// <summary>
+        /// returns null if the first character is not a lowercase letter
+        /// </summary>
+        public static string FirstCharToUpper(this string value)
+        {
+            return !IsFirstCharLower(value)
+                ? null
+                : (value.Substring(0, 1).ToUpperInvariant() + value.Substring(1));
+        }
+
+        /// <summary>
+        /// returns null if the first character is not a letter
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static string ToggleFirstChar(this string value)
+        {
+            return FirstCharToLower(value) ?? FirstCharToUpper(value);
+        }
+
+        public static bool IsFirstCharUpper(this string value)
+        {
+            return value.Length > 0 && Char.IsUpper(value, 0);
+        }
+
+        public static bool IsFirstCharLower(this string value)
+        {
+            return value.Length > 0 && Char.IsLower(value, 0);
+        }
 
 		/// <summary>
 		/// Converts from base: 0 - 62

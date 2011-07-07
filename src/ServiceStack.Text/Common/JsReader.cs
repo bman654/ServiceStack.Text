@@ -14,7 +14,29 @@ namespace ServiceStack.Text.Common
 
 			if (type.IsEnum)
 			{
-				return x => Enum.Parse(type, x, false);
+                return x =>
+                    {
+                        try
+                        {
+                            return Enum.Parse(type, x, false);
+                        }
+                        catch (ArgumentException e)
+                        {
+                            x = x.ToggleFirstChar();
+                            if (x != null)
+                            {
+                                try
+                                {
+                                    return Enum.Parse(type, x, false);
+                                }
+                                catch
+                                {
+                                    // eat this exception
+                                }
+                            }
+                            throw;
+                        }
+                    };
 			}
 
 			if (type == typeof(string))
@@ -26,9 +48,6 @@ namespace ServiceStack.Text.Common
 			var specialParseFn = ParseUtils.GetSpecialParseMethod(type);
 			if (specialParseFn != null)
 				return specialParseFn;
-
-			if (type.IsEnum)
-				return x => Enum.Parse(type, x, false);
 
 			if (type.IsArray)
 			{
