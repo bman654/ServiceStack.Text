@@ -15,6 +15,7 @@ using System.IO;
 using System.Linq;
 using ServiceStack.Text.Json;
 using ServiceStack.Text.Reflection;
+using System.Collections.Generic;
 
 namespace ServiceStack.Text.Common
 {
@@ -24,6 +25,7 @@ namespace ServiceStack.Text.Common
 		private static readonly ITypeSerializer Serializer = JsWriter.GetTypeSerializer<TSerializer>();
 
 		private static readonly WriteObjectDelegate CacheFn;
+        private static HashSet<string> PropertySet;
 		internal static TypePropertyWriter[] PropertyWriters;
 
 		static WriteType()
@@ -67,6 +69,8 @@ namespace ServiceStack.Text.Common
 				);
 			}
 
+            PropertySet = new HashSet<string>(PropertyWriters.Select(p => p.PropertyName));
+
 			return true;
 		}
 
@@ -108,7 +112,17 @@ namespace ServiceStack.Text.Common
 					if (i++ > 0)
 						writer.Write(JsWriter.ItemSeperator);
 
-					Serializer.WritePropertyName(writer, propertyWriter.PropertyName);
+                    var propertyName = propertyWriter.PropertyName;
+                    if (JsConfig.SerializePropertyNamesWithLowerCaseFirstLetter)
+                    {
+                        var lower = propertyName.FirstCharToLower();
+                        if (lower != null && !PropertySet.Contains(lower)) // do not convert to lower case property if there is another property with that casing already.
+                        {
+                            propertyName = lower;
+                        }
+                    }
+
+					Serializer.WritePropertyName(writer, propertyName);
 					writer.Write(JsWriter.MapKeySeperator);
 
 					if (typeof(TSerializer) == typeof(JsonTypeSerializer)) JsState.IsWritingValue = true;

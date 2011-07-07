@@ -14,6 +14,9 @@ namespace ServiceStack.Text
 		[ThreadStatic]
 		public static bool IncludeNullValues = false;
 
+        [ThreadStatic]
+        public static bool SerializePropertyNamesWithLowerCaseFirstLetter = false;
+
 #if SILVERLIGHT || MONOTOUCH
 		/// <summary>
 		/// Provide hint to MonoTouch AOT compiler to pre-compile generic classes for all your DTOs.
