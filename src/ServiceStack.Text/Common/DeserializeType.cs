@@ -50,7 +50,7 @@ namespace ServiceStack.Text.Common
 		}
 
 		private static object StringToType(Type type, string strType, 
-           EmptyCtorDelegate ctorFn,
+		   EmptyCtorDelegate ctorFn,
 		   IDictionary<string, SetPropertyDelegate> setterMap,
 		   IDictionary<string, ParseStringDelegate> parseStringFnMap)
 		{
@@ -78,15 +78,15 @@ namespace ServiceStack.Text.Common
 
 				var propertyValueString = Serializer.EatValue(strType, ref index);
 
-                if (!parseStringFnMap.TryGetValue(propertyName, out parseStringFn))
-                {
-                    // try changing case of the first character
-                    var p2 = propertyName.ToggleFirstChar();
-                    if (p2 != null && parseStringFnMap.TryGetValue(p2, out parseStringFn))
-                    {
-                        propertyName = p2;
-                    }
-                }
+				if (!parseStringFnMap.TryGetValue(propertyName, out parseStringFn))
+				{
+					// try changing case of the first character
+					var p2 = propertyName.ToggleFirstChar();
+					if (p2 != null && parseStringFnMap.TryGetValue(p2, out parseStringFn))
+					{
+						propertyName = p2;
+					}
+				}
 
 				if (parseStringFn != null)
 				{
@@ -106,10 +106,34 @@ namespace ServiceStack.Text.Common
 			return instance;
 		}
 
+		private static SetPropertyDelegate FSharpRecordSetPropertyPolicy(PropertyInfo property)
+		{
+			string propertyName = property.Name;
+			string fieldName = propertyName.EndsWith("@") ? propertyName : propertyName + "@";
+			FieldInfo fi = property.DeclaringType.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
+			if (fi == null) return null;
+			return GetSetFieldMethod(property.DeclaringType, fi);
+		}
+
+		public static SetPropertyDelegate GetSetFieldMethod(Type type, FieldInfo fieldInfo)
+		{
+			var oInstanceParam = Expression.Parameter(typeof(object), "oInstanceParam");
+			var oValueParam = Expression.Parameter(typeof(object), "oValueParam");
+			var instanceParam = Expression.Convert(oInstanceParam, type);
+			var useType = fieldInfo.FieldType;
+			var valueParam = Expression.Convert(oValueParam, useType);
+			return Expression.Lambda<SetPropertyDelegate>(
+				Expression.Assign(Expression.Field(instanceParam, fieldInfo), valueParam),
+				oInstanceParam,
+				oValueParam)
+				.Compile();
+		}
+
 		public static SetPropertyDelegate GetSetPropertyMethod(Type type, PropertyInfo propertyInfo)
 		{
 			var setMethodInfo = propertyInfo.GetSetMethod(true);
-			if (setMethodInfo == null) return null;
+			// if there's no setter, let's see if we can try the F# policy of a private field suffixed by @.
+            if (setMethodInfo == null) return FSharpRecordSetPropertyPolicy(propertyInfo);
 			
 #if SILVERLIGHT || MONOTOUCH
 			return (instance, value) => setMethodInfo.Invoke(instance, new[] {value});
