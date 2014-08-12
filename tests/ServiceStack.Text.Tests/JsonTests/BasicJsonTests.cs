@@ -71,6 +71,24 @@ namespace ServiceStack.Text.Tests.JsonTests
         }
 
         [Test]
+        public void Can_deserialize_simple_fsharp_record()
+        {
+            var s = JsonSerializer.DeserializeFromString<ServiceStack.Text.FSharp.Tests.Coordinate>("{\"X\":1.0,\"Y\":2.0}");
+            Assert.AreEqual(1.0, s.X);
+            Assert.AreEqual(2.0, s.Y);
+        }
+
+        [Test]
+        public void Can_deserialize_nested_fsharp_record()
+        {
+            var s = JsonSerializer.DeserializeFromString<ServiceStack.Text.FSharp.Tests.Line>("{\"Start\":{\"X\":1.0,\"Y\":2.0},\"End\":{\"X\":3.0,\"Y\":4.0}}");
+            Assert.AreEqual(1.0, s.Start.X);
+            Assert.AreEqual(2.0, s.Start.Y);
+            Assert.AreEqual(3.0, s.End.X);
+            Assert.AreEqual(4.0, s.End.Y);
+        }
+
+        [Test]
         public void Serialize_skips_null_values_by_default()
         {
             var o = new NullValueTester
